@@ -57,6 +57,16 @@ export async function saveJob(job: Job, event?: Omit<QueueEvent, "t">) {
   await p.exec();
 }
 
+/** Record an event that isn't tied to a job update (e.g. a rejected QStash delivery). */
+export async function logEvent(event: Omit<QueueEvent, "t">) {
+  await redis()
+    .pipeline()
+    .lpush(KEYS.events, { ...event, t: Date.now() })
+    .ltrim(KEYS.events, 0, MAX_EVENTS - 1)
+    .incr(KEYS.ver)
+    .exec();
+}
+
 export async function nextSeq() {
   return redis().incr(KEYS.seq);
 }

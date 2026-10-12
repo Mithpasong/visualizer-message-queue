@@ -1,7 +1,7 @@
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { countPrimes, InvalidInputError, parseInput } from "@/lib/cpu-task";
 import { QSTASH_DEV_MODE } from "@/lib/qstash";
-import { getJob, saveJob } from "@/lib/redis";
+import { getJob, logEvent, saveJob } from "@/lib/redis";
 import type { AttemptLog, Job } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -122,6 +122,24 @@ async function work(request: Request) {
 let handler: ((request: Request) => Promise<Response>) | null = null;
 
 export async function POST(request: Request) {
-  handler ??= verifySignatureAppRouter(work, { devMode: QSTASH_DEV_MODE });
-  return handler(request);
+  // Only QStash deliveries carry this header; anything else is just rejected quietly
+  const fromQStash = request.headers.has("upstash-signature");
+  try {
+    handler ??= verifySignatureAppRouter(work, { devMode: QSTASH_DEV_MODE });
+    const response = await handler(request);
+    if (fromQStash && response.status === 403) {
+      // Signature check failed before the job could start: make it visible instead of a silent stall
+      await reportRejected("invalid signature — check QSTASH_CURRENT_SIGNING_KEY / QSTASH_NEXT_SIGNING_KEY");
+    }
+    return response;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (fromQStash) await reportRejected(message);
+    return new Response(message, { status: 500 });
+  }
+}
+
+async function reportRejected(reason: string) {
+  console.error("[api/worker] rejected QStash delivery:", reason);
+  await logEvent({ type: "failed", msg: `Worker rejected a QStash delivery: ${reason}` }).catch(() => {});
 }
