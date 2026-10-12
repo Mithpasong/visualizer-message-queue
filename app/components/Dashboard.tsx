@@ -223,8 +223,8 @@ export default function Dashboard() {
 
         <Field label="Jobs / Concurrency">
           <div className="flex flex-col gap-2">
-            <Segmented options={[1, 3, 5, 10]} value={count} onChange={setCount} suffix=" jobs" />
-            <Segmented options={[1, 2, 3, 5]} value={parallelism} onChange={setParallelism} prefix="×" />
+            <Segmented options={[1, 3, 5, 10]} value={count} onChange={setCount} format={(n) => `${n} ${n === 1 ? "job" : "jobs"}`} />
+            <Segmented options={[1, 2, 3, 5]} value={parallelism} onChange={setParallelism} format={(n) => `×${n}`} />
           </div>
         </Field>
 
@@ -475,14 +475,12 @@ function Segmented({
   options,
   value,
   onChange,
-  prefix = "",
-  suffix = "",
+  format = String,
 }: {
   options: number[];
   value: number;
   onChange: (v: number) => void;
-  prefix?: string;
-  suffix?: string;
+  format?: (v: number) => string;
 }) {
   return (
     <div className="flex overflow-hidden rounded-md border border-zinc-300 dark:border-[#3d444d]">
@@ -490,13 +488,11 @@ function Segmented({
         <button
           key={o}
           onClick={() => onChange(o)}
-          className={`flex-1 px-3 py-1.5 text-sm ${
+          className={`flex-1 px-3 py-1.5 text-sm whitespace-nowrap ${
             value === o ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "hover:bg-zinc-100 dark:hover:bg-[#2f3742]"
           }`}
         >
-          {prefix}
-          {o}
-          {suffix}
+          {format(o)}
         </button>
       ))}
     </div>
