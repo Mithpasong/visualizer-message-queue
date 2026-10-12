@@ -1,5 +1,6 @@
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { countPrimes, InvalidInputError, parseInput } from "@/lib/cpu-task";
+import { QSTASH_DEV_MODE } from "@/lib/qstash";
 import { getJob, saveJob } from "@/lib/redis";
 import type { AttemptLog, Job } from "@/lib/types";
 
@@ -121,6 +122,6 @@ async function work(request: Request) {
 let handler: ((request: Request) => Promise<Response>) | null = null;
 
 export async function POST(request: Request) {
-  handler ??= verifySignatureAppRouter(work);
+  handler ??= verifySignatureAppRouter(work, { devMode: QSTASH_DEV_MODE });
   return handler(request);
 }
