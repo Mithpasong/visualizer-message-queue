@@ -177,7 +177,7 @@ export default function Dashboard() {
 
       {/* Input panel */}
       <section className="grid gap-5 rounded-xl border border-zinc-200 bg-white p-5 md:grid-cols-2 2xl:grid-cols-[1.3fr_1.4fr_auto_auto_auto] dark:border-[#3d444d] dark:bg-[#262c36]">
-        <Field label="Input N" hint="Counts primes from 2 to N (max 50M; 20M ≈ 3s). Invalid values are enqueued as-is.">
+        <Field label="Input N" hint="Counts primes from 2 to N (max 50M; 20M ≈ 3s locally, longer on Vercel). Invalid values are enqueued as-is.">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -44,10 +44,10 @@ export async function countPrimes(
     }
 
     const percent = Math.round(((step + 1) / STEPS) * 100);
+    await onProgress(percent);
     if (options.failAt !== undefined && percent >= options.failAt) {
       throw new SimulatedFailure(`Processing error at ${percent}%`);
     }
-    await onProgress(percent);
   }
 
   return count;

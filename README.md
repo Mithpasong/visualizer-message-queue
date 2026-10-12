@@ -6,6 +6,23 @@
 
 > Next.js 16 · React 19 · TypeScript · Upstash QStash · Upstash Redis · Server-Sent Events · Tailwind CSS 4 · Motion · Vercel
 
+### 🔗 라이브 데모: https://visualizer-message-queue.vercel.app
+
+![대시보드: 작업이 Queued → Processing → Retrying → Done / Failed(DLQ)로 이동하는 모습과 오른쪽 이벤트 로그](docs/dashboard.png)
+
+<p align="center"><sub>동시 처리 ×2 · Normal / Transient / Permanent / 잘못된 입력(<code>abc</code>)을 섞어 넣은 장면. 5개 칸이 모두 채워져 있고, 오른쪽 이벤트 로그에 시작 · 재시도 · 실패 이벤트가 실시간으로 쌓입니다.</sub></p>
+
+<details>
+<summary><b>실패 사유 상세 창 보기</b></summary>
+
+<br>
+
+![실패 상세: Permanent 작업이 2번 모두 실패해 DLQ로 이동한 과정과 시도별 타임라인](docs/failure-details.png)
+
+<p align="center"><sub>Failed 카드를 클릭하면 실패 원인 설명, 에러 메시지, 시도별 타임라인(시각 · 진행률 · HTTP 응답 코드 · 워커 ID)을 보여줍니다.</sub></p>
+
+</details>
+
 ---
 
 ## 목차
@@ -33,7 +50,7 @@
 | 기능 | 설명 |
 |---|---|
 | **실시간 칸반 보드** | `Queued` · `Processing` · `Retrying` · `Done` · `Failed (DLQ)` 5개 칸으로 작업 상태를 SSE로 실시간 표시합니다. 새 카드는 위에서 떨어지듯 쌓이고, 기존 카드는 부드럽게 한 칸씩 밀려납니다. |
-| **실제 CPU 작업** | 워커가 `2 ~ N` 범위의 소수를 직접 셉니다. N을 키우면 처리 시간이 길어집니다(로컬 기준 N=2,000만이면 약 3초). |
+| **실제 CPU 작업** | 워커가 `2 ~ N` 범위의 소수를 직접 셉니다. N을 키우면 처리 시간이 길어집니다. N=2,000만 기준으로 로컬에서는 약 3초, Vercel 서버리스에서는 약 7~20초 걸립니다. |
 | **동시 처리 수 조절** | QStash Flow Control의 `parallelism`(×1, ×2, ×3, ×5)으로 순차 처리와 병렬 처리를 비교할 수 있습니다. |
 | **재시도 횟수 설정** | 0~3회 사이로 입력받아 QStash 재시도 정책에 그대로 반영합니다. |
 | **실패 시나리오** | `Normal`, `Transient`(첫 시도만 실패), `Permanent`(매번 실패), 잘못된 입력(`abc`, `-5`, 너무 큰 값)을 선택할 수 있습니다. |
@@ -307,6 +324,7 @@ visualizer-message-queue/
 │   ├── globals.css                   # Tailwind 설정, 다크 테마 색상, 버튼 커서 등 전역 스타일
 │   ├── layout.tsx                    # 루트 레이아웃 (Pretendard 폰트, 다크 모드 기본, 메타데이터)
 │   └── page.tsx                      # 메인 페이지 (Dashboard 렌더링)
+├── docs/                             # README 스크린샷 (dashboard.png, failure-details.png)
 ├── lib/                              # 서버/클라이언트 공용 로직
 │   ├── cpu-task.ts                   # 입력값 검증(parseInput), 소수 세기(countPrimes), 의도적 실패
 │   ├── enqueue.ts                    # 작업 생성 → Redis 기록 → QStash 발행 (재시도·동시성 옵션)
