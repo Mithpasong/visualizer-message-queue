@@ -4,6 +4,9 @@ import type { FailMode, Job } from "./types";
 
 const RETRY_DELAY_MS = 3000; // Demo: 3s between retries (the default is tens of seconds to minutes)
 
+/** Publishing to QStash failed, so the job never reached the queue. */
+export class PublishError extends Error {}
+
 export function workerUrl(request: Request) {
   // Without APP_URL, use the request origin (localhost locally, the Vercel domain when deployed)
   const origin = process.env.APP_URL ?? new URL(request.url).origin;
@@ -39,13 +42,24 @@ export async function enqueueJob(
   });
 
   // 2) Publish to the message queue (QStash) → QStash calls /api/worker in order
-  await qstash().publishJSON({
-    url: workerUrl(request),
-    body: { id: job.id },
-    retries: params.retries,
-    retryDelay: String(RETRY_DELAY_MS),
-    flowControl: { key: FLOW_CONTROL_KEY, parallelism: params.parallelism },
-  });
+  try {
+    await qstash().publishJSON({
+      url: workerUrl(request),
+      body: { id: job.id },
+      retries: params.retries,
+      retryDelay: String(RETRY_DELAY_MS),
+      flowControl: { key: FLOW_CONTROL_KEY, parallelism: params.parallelism },
+    });
+  } catch (err) {
+    // Don't leave the job stuck in "queued": record why it never made it into the queue
+    const message = `Publish to QStash failed: ${err instanceof Error ? err.message : String(err)}`;
+    const failedAt = Date.now();
+    await saveJob(
+      { ...job, status: "failed", error: message, errorKind: "publish", finishedAt: failedAt, statusAt: failedAt },
+      { type: "failed", seq: job.seq, msg: `#${job.seq} ${message}` },
+    );
+    throw new PublishError(message);
+  }
 
   return job;
 }

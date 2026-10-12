@@ -27,6 +27,12 @@ function fmtTime(t?: number) {
 /** Plain-language explanation of why the job ended up in the DLQ. */
 function explain(job: Job) {
   const retries = job.maxAttempts - 1;
+  if (job.errorKind === "publish") {
+    return {
+      title: "Never reached the queue (publish failed)",
+      body: "The job was saved as queued, but publishing the message to QStash failed, so no worker was ever called. This is usually a configuration problem: check QSTASH_TOKEN and QSTASH_URL (the region URL that matches the token) in the environment variables, then redeploy.",
+    };
+  }
   if (job.errorKind === "invalid-input") {
     return {
       title: "Invalid input (non-retryable)",

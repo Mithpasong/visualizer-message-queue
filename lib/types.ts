@@ -24,7 +24,7 @@ export type Job = {
   worker?: string; // serverless instance ID that processed it
   result?: number; // number of primes found
   error?: string;
-  errorKind?: "invalid-input" | "processing";
+  errorKind?: "invalid-input" | "processing" | "publish";
   replayOf?: number; // original job number when a failed job is replayed
   history?: AttemptLog[]; // one entry per delivery attempt, oldest first
 };

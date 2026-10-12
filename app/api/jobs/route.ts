@@ -1,4 +1,4 @@
-import { enqueueJob } from "@/lib/enqueue";
+import { enqueueJob, PublishError } from "@/lib/enqueue";
 import { clampRetries } from "@/lib/limits";
 import { resetAll, trimJobs } from "@/lib/redis";
 import type { FailMode } from "@/lib/types";
@@ -21,8 +21,15 @@ export async function POST(request: Request) {
   const failMode: FailMode = FAIL_MODES.includes(body.failMode) ? body.failMode : "none";
 
   const jobs = [];
-  for (let i = 0; i < count; i++) {
-    jobs.push(await enqueueJob(request, { input, failMode, parallelism, retries }));
+  try {
+    for (let i = 0; i < count; i++) {
+      jobs.push(await enqueueJob(request, { input, failMode, parallelism, retries }));
+    }
+  } catch (err) {
+    // Surface the real reason (e.g. a wrong QSTASH_TOKEN / QSTASH_URL) instead of an empty 500
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[api/jobs]", message);
+    return Response.json({ error: message, jobs }, { status: err instanceof PublishError ? 502 : 500 });
   }
   await trimJobs();
 

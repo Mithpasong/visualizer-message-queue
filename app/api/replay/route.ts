@@ -13,13 +13,18 @@ export async function POST(request: Request) {
   }
 
   const input = typeof body.input === "string" ? body.input.slice(0, 40) : original.input;
-  const job = await enqueueJob(request, {
-    input,
-    failMode: "none", // assume the cause was fixed and process again
-    parallelism: original.parallelism,
-    retries: original.maxAttempts - 1,
-    replayOf: original.seq,
-  });
-
-  return Response.json({ job });
+  try {
+    const job = await enqueueJob(request, {
+      input,
+      failMode: "none", // assume the cause was fixed and process again
+      parallelism: original.parallelism,
+      retries: original.maxAttempts - 1,
+      replayOf: original.seq,
+    });
+    return Response.json({ job });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[api/replay]", message);
+    return Response.json({ error: message }, { status: 502 });
+  }
 }
