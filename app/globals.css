@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* Dark mode is the default: `dark:` classes apply whenever <html class="dark"> is set */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+.dark {
+  --background: #212830;
+  --foreground: #e6edf3;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-pretendard), system-ui, sans-serif;
+  --font-mono: var(--font-pretendard), system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Every button shows a pointer; disabled ones show not-allowed */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* `font-mono` now uses Pretendard too; keep digits fixed-width so live timers don't jitter */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
